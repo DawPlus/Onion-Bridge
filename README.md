@@ -1,39 +1,48 @@
 <div align="right">
-  <b>English</b> ·
-  <a href="README.kr.md">한국어</a> ·
+  <b>한국어</b> ·
   <a href="README.ja.md">日本語</a> ·
   <a href="README.zh-CN.md">简体中文</a>
 </div>
 
 # GPT Bridge
 
-A VS Code extension that exposes your current workspace as an MCP server so
-**ChatGPT can read and edit your code directly.**
+GPT Bridge는 현재 열려 있는 VS Code 워크스페이스를 MCP 서버로 연결해
+**ChatGPT가 프로젝트의 코드를 직접 읽고 수정할 수 있게 해주는 VS Code 확장 프로그램**입니다.
 
-> **Core principle — GPT's text edits go to the editor buffer, not to disk.**
-> You can undo them with `Ctrl+Z`, and nothing touches disk until `Ctrl+S`.
-> Creating, deleting, and renaming files are the exception: those hit disk
-> as soon as you approve them.
+OpenAI Secure MCP Tunnel을 사용하며, 최초 설정 이후에는 VS Code에서 GPT Bridge와
+`tunnel-client`가 함께 실행됩니다.
 
-## What it can do
+> **핵심 원칙**
+>
+> 일반적인 텍스트 수정은 디스크가 아니라 VS Code 편집기 버퍼에 먼저 적용됩니다.
+> 따라서 `Ctrl+Z`로 되돌릴 수 있으며, 자동 저장을 사용하지 않는 경우 `Ctrl+S` 전까지
+> 디스크에 저장되지 않습니다. 파일 생성, 삭제, 이름 변경은 승인 후 즉시 디스크에 반영됩니다.
 
-| Read | Write (requires approval) |
+## 주요 기능
+
+| 읽기 | 쓰기 |
 |---|---|
-| `get_workspace_info` workspace summary | `edit_file` targeted edit ← primary |
-| `list_directory` file listing | `write_file` create or replace |
-| `read_file` read a file | `create_directory` create a folder |
-| `search_text` text search | `delete_path` delete (always confirms) |
-| `get_diagnostics` type & lint errors | `save_file` save |
+| `get_workspace_info` 워크스페이스 정보 | `edit_file` 기존 파일 부분 수정 |
+| `list_directory` 파일/폴더 목록 | `write_file` 새 파일 생성 |
+| `read_file` 파일 읽기 | `create_directory` 폴더 생성 |
+| `search_text` 코드 검색 | `delete_path` 파일/폴더 삭제 |
+| `get_diagnostics` 타입/Lint 진단 | `save_file` 명시적 저장 |
 
-`get_diagnostics` is what sets this apart — GPT reads your type errors and fixes
-them itself. Listing and search respect `.gitignore`.
+`get_diagnostics`를 통해 ChatGPT가 수정 후 타입 오류와 Lint 문제를 다시 확인할 수 있습니다.
+파일 목록과 검색은 `.gitignore`를 따릅니다.
 
 ---
 
-## Install
+## 설치
 
-Requirements: [Git](https://git-scm.com/downloads),
-[Node.js](https://nodejs.org/) (LTS), [VS Code](https://code.visualstudio.com/) 1.90+.
+### 요구 사항
+
+- Git
+- Node.js LTS
+- VS Code 1.90 이상
+- OpenAI `tunnel-client`
+
+저장소를 받은 뒤 설치합니다.
 
 ```bash
 git clone https://github.com/DreamURL/GPT-Bridge.git
@@ -42,255 +51,127 @@ npm install
 npm run setup
 ```
 
-`npm run setup` builds the `.vsix` and installs it in one step. When it finishes,
-run `Ctrl+Shift+P` → **`Developer: Reload Window`** in VS Code. The GPT Bridge
-icon appears in the left activity bar.
+`npm run setup`은 확장을 빌드하고 VSIX를 설치합니다.
 
-> Why `cd GPT-Bridge`? `git clone` **creates a new folder** named after the
-> repository and puts the files inside it. You stay in the parent directory when
-> it finishes, so you have to step into that folder for `npm install` to work.
+설치가 끝나면 VS Code에서 `Ctrl+Shift+P` → **Developer: Reload Window**를 실행하세요.
+왼쪽 Activity Bar에 GPT Bridge가 표시됩니다.
 
-**To update:** `git pull && npm install && npm run setup`.
-**To remove it:** see *Uninstall* near the end of this file.
+업데이트할 때는 다음 명령을 사용합니다.
 
-### If it says the `code` command was not found
+```bash
+git pull
+npm install
+npm run setup
+```
 
-The build succeeded; only the install step failed. Add it from the VS Code UI:
-
-1. **Extensions** icon → `...` at the top right → **Install from VSIX**
-2. Pick `gpt-bridge-0.1.0.vsix` in the repository folder
-
-To enable the `code` command, run `Ctrl+Shift+P` →
-`Shell Command: Install 'code' command in PATH`.
-
-> ⚠️ **Do not copy a `.vsix` from another machine.** The ripgrep binary used for
-> file search ships per OS and CPU, so a `.vsix` built elsewhere makes search and
-> listing **fail silently.** Build it on each machine with the four lines above.
+> `code` 명령을 찾을 수 없다는 오류가 나오면 VSIX 빌드는 완료됐을 수 있습니다.
+> VS Code의 Extensions 메뉴에서 **Install from VSIX**를 선택해 생성된 VSIX를 직접 설치할 수 있습니다.
+>
+> 파일 검색에 사용하는 ripgrep 바이너리는 OS/CPU 환경에 영향을 받으므로 다른 PC에서 만든 VSIX를
+> 그대로 복사하기보다 사용할 PC에서 직접 빌드하는 것을 권장합니다.
 
 ---
 
-## Connecting ChatGPT
+## ChatGPT 연결
 
-ChatGPT lives on the internet and your code lives on your PC. Nothing can reach
-in from the outside, so we do the **opposite** — your PC places a call to OpenAI
-and keeps the line open.
+ChatGPT는 인터넷에 있고 GPT Bridge는 로컬 PC에서 실행됩니다.
+OpenAI Secure MCP Tunnel을 통해 로컬 서버를 직접 공개하지 않고 연결합니다.
 
 ```
-ChatGPT ──(auth: none)──▶ OpenAI tunnel ◀──(outbound)── tunnel-client (your PC)
-                                                            │ injects Authorization
-                                                            ▼
-                                                 127.0.0.1:3737  GPT Bridge
+ChatGPT → OpenAI Secure MCP Tunnel ← tunnel-client → GPT Bridge → VS Code Workspace
 ```
 
-No public address is created and **the token never leaves your machine.**
+### 1. tunnel-client 준비
 
-What follows is a summary. Screen-by-screen steps and troubleshooting live in
-[`TUNNEL_SETUP.md`](./TUNNEL_SETUP.md).
+OpenAI의 `tunnel-client`를 내려받아 압축을 풉니다.
+온보딩에서 실행 파일 위치를 선택하므로 PATH에 등록할 필요는 없습니다.
 
-**Collect three values first, then fill them into the config file in one pass
-at step 5.** Keep them in a scratch file.
+### 2. 최초 온보딩
 
-| Value | Comes from |
+GPT Bridge를 처음 열면 설정 화면이 표시됩니다.
+
+입력할 값은 다음 세 가지입니다.
+
+| 항목 | 설명 |
 |---|---|
-| Tunnel ID (`tunnel_...`) | Step 1 |
-| OpenAI API key (`sk-...`) | Step 2 |
-| GPT Bridge token (64 chars) | Step 3 |
+| tunnel-client 실행 파일 | 내려받은 `tunnel-client` 실행 파일 |
+| OpenAI Tunnel ID | `tunnel_`로 시작하는 Secure MCP Tunnel ID |
+| OpenAI API Key | `sk-`로 시작하는 API Key |
 
-### 1. Create a tunnel
+설정을 저장하면 GPT Bridge가 자동으로 다음 작업을 처리합니다.
 
-[platform.openai.com → Tunnels](https://platform.openai.com/settings/organization/tunnels)
-→ **Create tunnel**. Name and description are both required.
-Note down the ID that starts with `tunnel_`.
+- 터널 Provider를 OpenAI로 설정
+- 자동 시작 활성화
+- GPT Bridge 인증 토큰 생성
+- `gpt-bridge.yaml` 생성
+- API Key를 VS Code SecretStorage에 저장
+- `tunnel-client` 실행 시 API Key를 환경 변수로 전달
 
-### 2. Create an API key
+API Key 원문은 설정 화면에 다시 표시하지 않습니다.
+이미 저장된 키가 있으면 `********`로 표시되며, API Key 입력란을 비워둔 채 저장하면 기존 키를 유지합니다.
 
-[API keys](https://platform.openai.com/settings/organization/api-keys) →
-**Create new secret key**. Leave the permissions at **All** — there is no
-tunnel-specific scope. Copy the `sk-` value — **it is shown only once.**
+### 3. 설정 방법을 모르겠다면
 
-> This key is stored in plain text in a config file and used by a long-running
-> process. **Issue a key dedicated to this purpose.** Reusing a key from
-> somewhere else means revoking it later breaks that other thing too.
+온보딩 화면의 **❔ 도와줘** 버튼을 누르세요.
 
-### 3. Copy the GPT Bridge token
+ChatGPT용 설정 가이드 프롬프트가 클립보드에 복사됩니다.
+새 ChatGPT 대화에 붙여넣으면 최신 OpenAI 공식 문서를 기준으로 다음 과정을 한 단계씩 안내하도록 구성되어 있습니다.
 
-In VS Code, **open the folder you want to work in**, then:
+1. Secure MCP Tunnel 생성
+2. Tunnel ID 확인
+3. OpenAI API Key 생성
+4. GPT Bridge 온보딩 입력
+5. ChatGPT MCP/Connector 생성 및 연결
+6. 연결 확인
 
-1. `Ctrl+,` → search `gptBridge.tunnel.provider` → confirm it is **`none`**
-   (the default; it stops the extension from starting a tunnel of its own)
-2. `Ctrl+Shift+P` → **`GPT Bridge: Start server`**
-3. `Ctrl+Shift+P` → **`GPT Bridge: Copy auth token`**
+API Key나 인증 토큰 같은 비밀값을 ChatGPT 대화에 붙여넣도록 요구하지 않게 구성되어 있습니다.
 
-A 64-character string lands on your clipboard. **Write it down.**
+### 4. ChatGPT Connector 등록
 
-That is all three values.
+온보딩을 저장한 뒤 GPT Bridge를 실행합니다.
 
-### 4. Download tunnel-client
+ChatGPT에서 Secure MCP Tunnel을 사용하는 MCP/Connector를 생성하고,
+온보딩에서 사용한 Tunnel을 선택합니다.
 
-Grab the single zip for your OS from the
-[releases page](https://github.com/openai/tunnel-client/releases)
-(`windows-amd64` for most Windows PCs).
+GPT Bridge 패널의 **Connector URL**은 연결 확인이나 문제 해결 시 사용할 수 있습니다.
+인증 토큰은 GPT Bridge가 자동으로 생성하고 터널 설정에 넣기 때문에 사용자가 직접 복사할 필요가 없습니다.
 
-**Before extracting**, hash the **zip file itself** and compare it against
-`SHA256SUMS.txt` on the same page.
+### 5. ChatGPT 지침 복사
 
-```cmd
-:: Windows — the path must end in .zip
-certutil -hashfile "C:\...\tunnel-client-v0.0.11-windows-amd64.zip" SHA256
-```
-```bash
-# macOS / Linux
-shasum -a 256 "~/Downloads/tunnel-client-v0.0.11-windows-amd64.zip"
-```
+GPT Bridge 패널에서 **GPT 지침 복사** 버튼을 누른 뒤 ChatGPT에 붙여넣습니다.
 
-> `ERROR_FILE_NOT_FOUND` means you pointed at a **folder**. This command hashes a
-> single file, so it must point at the **zip**, not the extracted directory — and
-> the values in `SHA256SUMS.txt` are for the zip, so extracted files will never match.
->
-> To locate the zip: `dir /s /b "%USERPROFILE%\*tunnel-client*.zip"`.
-
-Stop if the values differ. If they match, extract anywhere **outside the repository**.
-
-### 5. Write the config file
-
-**Fill in all three values you collected, here, in one pass.** Do it now so you
-never have to reopen this file.
-
-**Create the folder yourself first.** `tunnel-client` has never run, so nothing
-exists yet.
-
-`Win + R` → type `%APPDATA%` → this folder opens:
-
-```
-C:\Users\<username>\AppData\Roaming
-```
-
-> ⚠️ **`%APPDATA%` is not the `AppData` folder — it points at `Roaming` inside it.**
-> The path is `AppData\Roaming\tunnel-client`, not `AppData\tunnel-client`.
-> Opening it the way above already puts you in the right place.
-
-In that folder, **right-click → New → Folder** → name it **`tunnel-client`**.
-Save the content below inside it as `gpt-bridge.yaml`. The final path:
-
-```
-Windows       C:\Users\<username>\AppData\Roaming\tunnel-client\gpt-bridge.yaml
-macOS/Linux   ~/.config/tunnel-client/gpt-bridge.yaml
-```
-
-> When saving from Notepad, set **Save as type to `All Files`**. Otherwise you
-> get `gpt-bridge.yaml.txt` and `tunnel-client` will not find it.
-
-```yaml
-config_version: 1
-
-control_plane:
-  base_url: "https://api.openai.com"
-
-  # Tunnel ID from step 1. Paste it whole, including the "tunnel_" prefix.
-  tunnel_id: "tunnel_0123456789abcdef0123456789abcdef"
-
-  # API key from step 2. The entire string starting with "sk-".
-  api_key: "sk-proj-AbCdEf0123456789...(truncated)...WxYz"
-
-health:
-  listen_addr: "127.0.0.1:8080"
-
-log:
-  # level and format must be set together. Omit format and tunnel-client
-  # refuses to start with "log level requires 'struct-text' or 'json' log format".
-  level: warn
-  format: json
-
-mcp:
-  server_urls:
-    - channel: main
-      url: "http://127.0.0.1:3737/mcp"
-
-  # GPT Bridge requires an Authorization header on every request.
-  # ChatGPT has no way to send one, so we attach it here instead.
-  extra_headers:
-    # 64-char token from step 3. Keep "Bearer" and the single space; replace only what follows.
-    Authorization: "Bearer 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-```
-
-> The three values above are **shape examples**. Left as-is, nothing will work.
-
-Replace them with what you collected. **Keep the quotation marks.**
-
-| Field | Shape | Watch out |
-|---|---|---|
-| `tunnel_id` | `tunnel_` + 32 hex chars | Include the **`tunnel_` prefix** — not just the digits |
-| `api_key` | starts with `sk-` or `sk-proj-` | The **entire** string shown at creation |
-| `Authorization` | `Bearer ` + 64 hex chars | Keep **`Bearer` and the single space**; replace only what follows |
-
-> ⚠️ **Do not delete `Bearer`.** It is `Bearer`, one space, then the token.
-> Drop it and the tunnel connects but every request is rejected with 401.
->
-> YAML derives structure from indentation. Use **spaces, not tabs**, and leave
-> the leading whitespace alone.
-
-### 6. Run the tunnel
-
-`tunnel-client` is not on your PATH — run it **from the folder you extracted in
-step 4**, so open a terminal there first.
-
-```cmd
-:: Windows
-cd /d "<the folder you extracted to>"
-tunnel-client.exe doctor --profile gpt-bridge --explain
-tunnel-client.exe run --profile gpt-bridge
-```
-```bash
-# macOS / Linux
-cd "<the folder you extracted to>"
-./tunnel-client doctor --profile gpt-bridge --explain
-./tunnel-client run --profile gpt-bridge
-```
-
-`doctor` only validates the config and connects to nothing, so run it first and
-fix whatever it reports. `run` opens the connection.
-
-> **Leave that window open.** It is holding the call; closing it drops the tunnel.
-
-Tired of typing this every time? Put a small `start-tunnel.bat` next to the
-executable and double-click it instead — see [`TUNNEL_SETUP.md`](./TUNNEL_SETUP.md).
-
-Status page: <http://127.0.0.1:8080/ui>
-
-### 7. Register the connector in ChatGPT
-
-Do this **while the tunnel is running.**
-
-1. ChatGPT → Settings → **Apps & Connectors** → **Advanced** → enable **Developer Mode**
-2. Add a connector → `Connection`: **Tunnel** → pick the tunnel you created
-3. `Authentication`: **None** ← **this one, definitely**
-
-> **Why "None"?** Headers forwarded by the connector are applied last and
-> **override** static headers. Choosing `OAuth` or `Mixed` makes ChatGPT's own
-> `Authorization` push out the Bearer token we injected, and the server returns 401.
-
-### 8. Add the instructions
-
-`Ctrl+Shift+P` → **`GPT Bridge: Copy ChatGPT instructions`**,
-then paste into ChatGPT.
-
-**This is effectively mandatory.** GPT rarely calls custom tools unless told to.
-There are three places to put it, with different scope:
-
-| Where | Scope |
-|---|---|
-| **Project instructions** ← recommended | Conversations in that project only |
-| Global custom instructions | Every conversation — it will reach for the tools in unrelated chats too |
-| First message of a chat | That chat only |
-
-### Everyday startup
-
-1. VS Code → `GPT Bridge: Start server`
-2. `tunnel-client run --profile gpt-bridge`
+이 지침은 ChatGPT가 GPT Bridge 도구를 사용할 때 필요한 작업 규칙을 제공합니다.
+프로젝트 단위로 사용할 경우 해당 프로젝트의 지침에 넣는 방식을 권장합니다.
 
 ---
 
-## Security
+## 평소 사용법
+
+최초 온보딩을 완료한 뒤에는 별도로 YAML을 작성하거나 터널 명령을 실행할 필요가 없습니다.
+
+VS Code에서 프로젝트를 열면 자동 시작 설정에 따라:
+
+1. GPT Bridge 로컬 MCP 서버가 시작됩니다.
+2. `tunnel-client`가 `gpt-bridge` 프로필로 시작됩니다.
+3. 기존 ChatGPT Connector에서 해당 워크스페이스의 MCP 도구를 사용할 수 있습니다.
+
+패널의 **시작 / 중지** 버튼으로 직접 제어할 수도 있습니다.
+
+### 터널 설정 변경
+
+패널 상단의 **설정하기** 버튼을 사용합니다.
+
+터널 설정은 GPT Bridge가 중지된 상태에서만 변경할 수 있습니다.
+실행 중 설정하기를 누르면 먼저 서버를 중지하라는 안내가 표시됩니다.
+
+설정 화면에서는 기존 Tunnel ID와 tunnel-client 경로가 표시됩니다.
+API Key는 보안을 위해 원문 대신 `********`로 표시됩니다.
+
+변경하지 않으려면 **닫기**를 눌러 설정 화면을 빠져나올 수 있습니다.
+
+---
+
+## 보안
 
 This tool opens your local filesystem to an external AI. These are the defenses.
 
