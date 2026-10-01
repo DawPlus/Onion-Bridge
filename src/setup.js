@@ -42,7 +42,7 @@ export async function runSetup() {
     tunnelId,
     apiKey,
     token: current?.token || crypto.randomBytes(32).toString("hex"),
-    profile: "gpt-bridge",
+    profile: "onion",
     port: current?.port || 3737
   };
 

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { readSetup, runSetup } from "./setup.js";
 
-const DEFAULT_PROFILE = "gpt-bridge";
+const DEFAULT_PROFILE = "onion";
 
 export function profilePath(profile = DEFAULT_PROFILE) {
 	const base =
@@ -48,7 +48,7 @@ admin_ui:
   open_browser: false
 
 log:
-  level: warn
+  level: error
   format: json
 
 mcp:

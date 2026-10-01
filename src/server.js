@@ -26,12 +26,6 @@ export async function startBridge() {
 	app.use(express.json({ limit: "5mb" }));
 
 	app.get("/health", (_req, res) => res.json({ status: "ok" }));
-	app.get("/.well-known/oauth-protected-resource", (_req, res) => {
-		res.status(404).json({ error: "OAuth is not configured" });
-	});
-	app.get("/.well-known/oauth-authorization-server", (_req, res) => {
-		res.status(404).json({ error: "OAuth is not configured" });
-	});
 	app.post("/mcp", async (req, res) => {
 		if (req.headers.authorization !== `Bearer ${config.token}`) {
 			res.status(401).json({ error: "Unauthorized" });
@@ -62,6 +56,7 @@ export async function startBridge() {
 
 	console.log(`[onionBridge] workspace: ${root}`);
 	console.log(`[onionBridge] MCP: http://127.0.0.1:${config.port}/mcp`);
+	console.warn("[onionBridge] WARNING: OAuth is not used. File operations are auto-approved. Use at your own risk.");
 
 	const tunnel = spawn(config.tunnelBin, ["run", "--profile", config.profile], {
 		stdio: "inherit",

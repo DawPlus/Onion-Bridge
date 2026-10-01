@@ -1,48 +1,40 @@
 # 🧅 Onion Bridge
 
-Onion Bridge는 **현재 터미널 디렉터리를 MCP 서버로 열어 ChatGPT가 프로젝트 파일을 직접 읽고 수정할 수 있게 해주는 CLI**입니다.
-
-VS Code Extension이 필요하지 않습니다. 프로젝트 폴더에서 `onion`만 실행하면 로컬 MCP 서버와 OpenAI Secure MCP Tunnel이 함께 시작됩니다.
+Onion Bridge is a **CLI that exposes the current terminal directory as an MCP server, allowing ChatGPT to read and modify project files directly.**
 
 ```text
 ChatGPT → OpenAI Secure MCP Tunnel ← tunnel-client → Onion Bridge → Current Directory
 ```
 
-## GPT-Bridge에서 시작했습니다
+## Derived from GPT-Bridge
 
-Onion Bridge는 [GPT-Bridge](https://github.com/dreamurl/GPT-Bridge)에서 파생된 프로젝트입니다.
+Onion Bridge is derived from [GPT-Bridge](https://github.com/dreamurl/GPT-Bridge).
 
-기존 GPT-Bridge의 **ChatGPT와 로컬 개발 환경을 MCP로 연결한다**는 아이디어와 구현을 바탕으로, VS Code Extension 대신 터미널에서 바로 실행할 수 있는 CLI 형태로 단순화했습니다.
+## Features
 
-현재 Onion Bridge는 별도의 VS Code UI 없이 현재 디렉터리를 workspace로 사용하며, MCP 서버와 `tunnel-client`를 함께 실행합니다.
-
-원본 프로젝트와 기여자들에게 감사드립니다.
-
-## 기능
-
-| 읽기 | 쓰기 |
+| Read | Write |
 |---|---|
 | `get_workspace_info` | `edit_file` |
 | `list_directory` | `write_file` |
 | `search_text` | `create_directory` |
 | `read_file` | `delete_path` |
 
-모든 파일 작업은 Onion Bridge를 실행한 디렉터리 내부로 제한됩니다.
+All file operations are restricted to the directory where Onion Bridge is started.
 
-쓰기/삭제는 별도 승인 없이 즉시 디스크에 반영됩니다.
+Writes and deletions are applied directly to disk without a separate approval step.
 
-실행 중 MCP 활동은 터미널에 실시간으로 표시되며 별도 히스토리 파일은 남기지 않습니다.
+MCP activity is shown in the terminal in real time and is not persisted to a history file.
 
-## 요구 사항
+## Requirements
 
-- Node.js 20 이상
+- Node.js 20 or later
 - OpenAI `tunnel-client`
 - OpenAI Secure MCP Tunnel ID
 - OpenAI API Key
 
-## 설치
+## Installation
 
-저장소에서:
+From the repository:
 
 ```bash
 npm install
@@ -50,43 +42,43 @@ npm pack
 npm install -g ./onion-bridge-0.1.0.tgz
 ```
 
-설치 후:
+Then run:
 
 ```bash
 onion
 ```
 
-명령을 찾을 수 없다면 npm global bin 경로가 PATH에 등록되어 있는지 확인하세요.
+If the command is not found, make sure the npm global bin directory is in your PATH.
 
-## 최초 설정
+## Initial Setup
 
-처음 `onion`을 실행했는데 설정이 없으면 자동으로 onboarding이 시작됩니다.
+If no configuration exists when you run `onion` for the first time, onboarding starts automatically.
 
-입력값은 세 가지입니다.
+You will be asked for three values:
 
-| 항목 | 설명 |
+| Item | Description |
 |---|---|
-| tunnel-client path | `tunnel-client` 실행 파일 경로 |
-| OpenAI Tunnel ID | `tunnel_`로 시작하는 Tunnel ID |
-| OpenAI API key | `sk-`로 시작하는 API Key |
+| tunnel-client path | Path to the `tunnel-client` executable |
+| OpenAI Tunnel ID | Tunnel ID starting with `tunnel_` |
+| OpenAI API key | API key starting with `sk-` |
 
-설정이 완료되면 Onion Bridge가 인증 토큰과 `gpt-bridge` tunnel-client profile을 자동으로 구성합니다.
+After setup, Onion Bridge automatically configures the authentication token and the `onion` tunnel-client profile.
 
-설정은 사용자 홈의 `.onion-bridge/config.json`에 저장되어 다른 프로젝트에서도 재사용됩니다.
+Configuration is stored in `.onion-bridge/config.json` in your home directory and can be reused across projects.
 
-설정을 변경하려면:
+To change the configuration:
 
 ```bash
 onion setup
 ```
 
-기존 값을 유지하려면 해당 항목에서 Enter를 누르면 됩니다.
+Press Enter to keep an existing value.
 
-### 설정 방법을 모르겠다면
+### Need help with setup?
 
-아래 프롬프트를 복사해서 **새 ChatGPT 대화에 붙여넣으세요.**
+Copy the prompt below and paste it into a **new ChatGPT conversation**.
 
-ChatGPT가 최신 OpenAI 공식 문서를 확인한 뒤 Secure MCP Tunnel 생성부터 Onion Bridge 연결 확인까지 한 단계씩 안내합니다.
+ChatGPT will check the latest official OpenAI documentation and guide you step by step from creating a Secure MCP Tunnel to verifying the Onion Bridge connection.
 
 ```text
 Guide me step by step through setting up Onion Bridge with OpenAI Secure MCP Tunnel.
@@ -111,36 +103,36 @@ Important:
 - If I encounter an error, troubleshoot that error before continuing to the next step.
 ```
 
-## 사용법
+## Usage
 
-연결할 프로젝트로 이동합니다.
+Go to the project you want to connect:
 
 ```bash
 cd C:\workspace\my-project
 onion
 ```
 
-또는 명시적으로:
+Or explicitly:
 
 ```bash
 onion start
 ```
 
-현재 디렉터리가 MCP workspace가 됩니다.
+The current directory becomes the MCP workspace.
 
 ```text
 🧅 Onion Bridge
 
 workspace: C:\workspace\my-project
 MCP: http://127.0.0.1:3737/mcp
-tunnel: gpt-bridge
+tunnel: onion
 ```
 
-종료는 `Ctrl+C`입니다.
+Press `Ctrl+C` to stop Onion Bridge.
 
-## 활동 로그
+## Activity Log
 
-ChatGPT가 MCP 도구를 호출하면 터미널에서 실시간으로 확인할 수 있습니다.
+When ChatGPT calls an MCP tool, the activity is shown in the terminal in real time.
 
 ```text
 13:02:11  INFO    .
@@ -152,57 +144,58 @@ ChatGPT가 MCP 도구를 호출하면 터미널에서 실시간으로 확인할 
 13:02:30  DELETE  src/old.js
 ```
 
-파일 내용 자체는 출력하지 않으며 로그를 파일로 저장하지 않습니다.
+File contents are not printed, and activity logs are not persisted to disk.
 
-## ChatGPT 연결
+## Connecting ChatGPT
 
-Onion Bridge는 로컬 `127.0.0.1:3737/mcp`에서 MCP 서버를 실행합니다.
+Onion Bridge runs the MCP server locally at `127.0.0.1:3737/mcp`.
 
-동시에 저장된 `gpt-bridge` profile로 `tunnel-client`를 실행해 OpenAI Secure MCP Tunnel과 연결합니다.
+It also starts `tunnel-client` using the saved `onion` profile and connects it to the OpenAI Secure MCP Tunnel.
 
-ChatGPT에서 해당 Tunnel을 사용하는 MCP Connector를 등록하면 현재 `onion`을 실행한 프로젝트의 도구를 사용할 수 있습니다.
+After registering an MCP Connector in ChatGPT that uses the same Tunnel, ChatGPT can use the tools from the project where `onion` is currently running.
 
-한 번 Connector를 구성한 뒤에는 평소에 프로젝트 폴더에서 `onion`만 실행하면 됩니다.
+Once the Connector is configured, normal usage is simply running `onion` inside the project directory.
 
-## 보안
+## Security
 
-Onion Bridge는 강력한 권한을 가진 개발 도구입니다.
+> ⚠️ **All Onion Bridge file operations are automatically approved.**
+>
+> File modifications, creations, and deletions requested by ChatGPT are written to disk immediately without an additional confirmation step. An incorrect or unexpected request can therefore modify your project immediately.
 
-- MCP 서버는 `127.0.0.1`에만 바인딩됩니다.
-- Tunnel 요청은 자동 생성된 Bearer Token으로 인증합니다.
-- 파일 접근은 Onion Bridge를 실행한 workspace 내부로 제한됩니다.
-- 절대 경로와 workspace 밖으로 빠져나가는 경로는 거부합니다.
-- `.git`과 `node_modules`은 파일 탐색에서 제외됩니다.
-- 파일 수정, 생성, 삭제는 별도 승인 없이 즉시 실행됩니다.
-- 활동 로그는 터미널에만 표시하고 저장하지 않습니다.
+For important projects, keep your work in a state that can be restored with Git or another version-control system. Check the terminal activity log and review actual file changes while Onion Bridge is running.
 
-OpenAI API Key는 `~/.onion-bridge/config.json`에 저장되므로 해당 파일을 외부에 공유하거나 Git에 커밋하지 마세요.
+Onion Bridge uses the directory where it was started as its workspace. Run it only inside the project you intend to expose. Do not run it from your home directory or an unnecessarily broad parent directory.
+
+Basic safeguards are still applied:
+
+- The MCP server binds only to `127.0.0.1`.
+- Tunnel requests are authenticated with an automatically generated Bearer Token.
+- File access is restricted to the workspace.
+- Absolute paths and paths that escape the workspace are rejected.
+- `.git` and `node_modules` are excluded from file traversal.
+- Activity is displayed only in the terminal and is not saved to a separate log file.
+
+The OpenAI API Key is stored in `~/.onion-bridge/config.json`. Do not share this file or commit it to Git.
 
 ## CLI
 
 ```bash
-onion          # MCP + Tunnel 시작
-onion start    # MCP + Tunnel 시작
-onion setup    # Tunnel 설정 생성/변경
-onion -v       # 버전 확인
+onion          # Start MCP + Tunnel
+onion start    # Start MCP + Tunnel
+onion setup    # Create or update Tunnel configuration
+onion -v       # Show version
 onion --version
 ```
 
-## 원본과의 차이
+## Differences from GPT-Bridge
 
-GPT-Bridge가 VS Code Extension을 중심으로 동작했다면 Onion Bridge는 CLI만 사용합니다.
+GPT-Bridge is centered around a VS Code Extension. Onion Bridge uses only a CLI.
 
-VS Code 설치나 Extension 실행이 필요하지 않고, `onion`을 실행한 디렉터리가 바로 workspace가 됩니다. 설정 UI, 승인 UI, 변경 히스토리 같은 에디터 기능은 제외하고 MCP 연결과 파일 작업에 필요한 기능만 남겼습니다.
+VS Code and the Extension are not required. The directory where `onion` is started becomes the workspace. Editor-specific features such as the settings UI, approval UI, and change history are removed, leaving only the MCP connection and file-operation tools.
 
-## 개발 철학
+## Philosophy
 
-Onion Bridge는 에디터나 IDE에 종속되지 않는 작은 MCP Bridge를 목표로 합니다.
-
-복잡한 UI, 승인 시스템, 변경 히스토리, 에디터 상태 관리는 두지 않습니다.
-
-**터미널에서 실행하고, 현재 폴더를 연결하고, ChatGPT가 MCP로 작업한다.**
-
-그게 전부입니다.
+None.
 
 ## License
 
