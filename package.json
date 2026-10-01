@@ -1,222 +1,26 @@
 {
-	"name": "gpt-bridge",
-	"displayName": "GPT Bridge",
-	"description": "Expose your VS Code workspace as an MCP server so ChatGPT can read and edit your code.",
-	"version": "0.1.0",
-	"publisher": "local",
-	"license": "MIT",
-	"private": true,
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/DreamURL/GPT-Bridge.git"
-	},
-	"engines": {
-		"vscode": "^1.90.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"main": "./dist/extension.js",
-	"extensionKind": [
-		"workspace"
-	],
-	"capabilities": {
-		"untrustedWorkspaces": {
-			"supported": false,
-			"description": "This extension exposes the local filesystem to an external service, so it only runs in trusted workspaces."
-		}
-	},
-	"activationEvents": [
-		"onStartupFinished"
-	],
-	"contributes": {
-		"commands": [
-			{
-				"command": "gptBridge.start",
-				"title": "GPT Bridge: Start server"
-			},
-			{
-				"command": "gptBridge.stop",
-				"title": "GPT Bridge: Stop server"
-			},
-			{
-				"command": "gptBridge.copyUrl",
-				"title": "GPT Bridge: Copy connector URL"
-			},
-			{
-				"command": "gptBridge.copyToken",
-				"title": "GPT Bridge: Copy auth token"
-			},
-			{
-				"command": "gptBridge.regenerateToken",
-				"title": "GPT Bridge: Regenerate token"
-			},
-			{
-				"command": "gptBridge.setTunnelToken",
-				"title": "GPT Bridge: Set tunnel token"
-			},
-			{
-				"command": "gptBridge.copyInstructions",
-				"title": "GPT Bridge: Copy ChatGPT instructions"
-			},
-			{
-				"command": "gptBridge.showLog",
-				"title": "GPT Bridge: Open log"
-			}
-		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "gptBridge",
-					"title": "GPT Bridge",
-					"icon": "media/icon.svg"
-				}
-			]
-		},
-		"views": {
-			"gptBridge": [
-				{
-					"id": "gptBridge.panel",
-					"name": "GPT Bridge",
-					"type": "webview"
-				}
-			]
-		},
-		"configuration": {
-			"title": "GPT Bridge",
-			"properties": {
-				"gptBridge.port": {
-					"type": "number",
-					"default": 3737,
-					"minimum": 1024,
-					"maximum": 65535,
-					"description": "Port the MCP server binds to on 127.0.0.1."
-				},
-				"gptBridge.autoStart": {
-					"type": "boolean",
-					"default": false,
-					"description": "Start the server automatically when VS Code launches."
-				},
-				"gptBridge.tunnel.provider": {
-					"type": "string",
-					"enum": [
-						"cloudflare",
-						"openai",
-						"none"
-					],
-					"default": "none",
-					"description": "Tunnel provider the extension starts on its own. Use \"openai\" to run tunnel-client with the configured profile, \"cloudflare\" to run cloudflared, or \"none\" for local-only/external tunnel management."
-				},
-				"gptBridge.tunnel.openai.binPath": {
-					"type": "string",
-					"default": "",
-					"description": "Path to tunnel-client executable. Leave empty to resolve tunnel-client from PATH."
-				},
-				"gptBridge.tunnel.openai.profile": {
-					"type": "string",
-					"default": "gpt-bridge",
-					"description": "OpenAI tunnel-client profile name."
-				},
-				"gptBridge.tunnel.hostname": {
-					"type": "string",
-					"default": "",
-					"description": "Public hostname of a Named Tunnel (e.g. bridge.example.com). It cannot be derived from the token, so set it here. Leave empty for a Quick Tunnel."
-				},
-				"gptBridge.approval.mode": {
-					"type": "string",
-					"enum": [
-						"always",
-						"session",
-						"pattern"
-					],
-					"enumDescriptions": [
-						"Ask for every write operation.",
-						"Auto-approve for the rest of the session after the first approval. Cleared when the extension reloads.",
-						"Auto-approve only paths matching autoApprovePatterns."
-					],
-					"default": "always",
-					"description": "How write operations are approved. delete_path always asks, in every mode."
-				},
-				"gptBridge.approval.autoApprovePatterns": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Path globs auto-approved in pattern mode."
-				},
-				"gptBridge.approval.timeoutSeconds": {
-					"type": "number",
-					"default": 90,
-					"minimum": 10,
-					"description": "Deny a request after this many seconds without an answer. The dialog stays on screen; a choice made after expiry is discarded."
-				},
-				"gptBridge.autoSave": {
-					"type": "boolean",
-					"default": false,
-					"description": "Save automatically after GPT edits. Leave off to keep disk unchanged until Ctrl+S (recommended)."
-				},
-				"gptBridge.deny.extraPatterns": {
-					"type": "array",
-					"default": [],
-					"items": {
-						"type": "string"
-					},
-					"description": "Extra globs added to the built-in deny list. Built-in entries cannot be removed."
-				},
-				"gptBridge.maxReadBytes": {
-					"type": "number",
-					"default": 1048576,
-					"minimum": 1024,
-					"description": "Maximum bytes read_file may return in one call."
-				},
-				"gptBridge.language": {
-					"type": "string",
-					"enum": [
-						"en",
-						"ko",
-						"ja",
-						"zh-cn",
-						"es"
-					],
-					"enumDescriptions": [
-						"English",
-						"한국어",
-						"日本語",
-						"简体中文",
-						"Español"
-					],
-					"default": "en",
-					"description": "Language for the panel, status bar and dialogs. Logs and tool descriptions stay in English."
-				}
-			}
-		}
-	},
-	"scripts": {
-		"typecheck": "tsc --noEmit",
-		"build": "node esbuild.mjs",
-		"build:prod": "node esbuild.mjs --production",
-		"watch": "node esbuild.mjs --watch",
-		"build:tests": "node esbuild.mjs --tests",
-		"test": "npm run build:tests && node --test --test-reporter=spec \"out-test/*.test.js\"",
-		"compile": "npm run typecheck && npm run build && npm test",
-		"setup": "npm run package && node scripts/install.mjs",
-		"vscode:prepublish": "npm run typecheck && npm run build:prod",
-		"package": "vsce package --allow-missing-repository"
-	},
-	"devDependencies": {
-		"@types/express": "^5.0.6",
-		"@types/node": "^20.14.0",
-		"@types/vscode": "^1.90.0",
-		"@vscode/vsce": "^3.2.0",
-		"esbuild": "^0.25.0",
-		"typescript": "^5.6.0"
-	},
-	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.30.0",
-		"@vscode/ripgrep": "^1.18.0",
-		"express": "^5.2.1",
-		"express-rate-limit": "^8.6.2",
-		"zod": "^4.4.3"
-	}
+  "name": "onion-bridge",
+  "version": "0.1.0",
+  "description": "Headless MCP bridge for exposing the current directory to ChatGPT.",
+  "type": "module",
+  "bin": {
+    "onion": "./bin/onionBridge.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node ./bin/onionBridge.js",
+    "pack:local": "npm pack"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "express": "^5.2.1",
+    "zod": "^4.4.3"
+  },
+  "license": "MIT"
 }
