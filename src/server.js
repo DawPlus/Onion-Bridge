@@ -4,7 +4,6 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { loadConfig } from "./config.js";
 import { registerTools } from "./tools.js";
-import { workspaceRoot } from "./workspace.js";
 
 function createMcp(root) {
 	const server = new McpServer(
@@ -18,14 +17,16 @@ function createMcp(root) {
 	return server;
 }
 
-export async function startBridge() {
-	const config = await loadConfig();
-	const root = workspaceRoot();
+export async function startBridge(profileName = "default") {
+	const config = await loadConfig(profileName);
+	const root = config.workspace;
 	const app = express();
 	app.disable("x-powered-by");
 	app.use(express.json({ limit: "5mb" }));
 
-	app.get("/health", (_req, res) => res.json({ status: "ok" }));
+	app.get("/health", (_req, res) =>
+		res.json({ status: "ok", profile: config.name, workspace: root }),
+	);
 	app.post("/mcp", async (req, res) => {
 		if (req.headers.authorization !== `Bearer ${config.token}`) {
 			res.status(401).json({ error: "Unauthorized" });
@@ -50,23 +51,32 @@ export async function startBridge() {
 	});
 
 	const http = await new Promise((resolve, reject) => {
-		const server = app.listen(config.port, "127.0.0.1", () => resolve(server));
-		server.once("error", reject);
+		const instance = app.listen(config.port, "127.0.0.1", () => resolve(instance));
+		instance.once("error", reject);
 	});
 
+	console.log(`[onionBridge] profile: ${config.name}`);
 	console.log(`[onionBridge] workspace: ${root}`);
 	console.log(`[onionBridge] MCP: http://127.0.0.1:${config.port}/mcp`);
-	console.log("[onionBridge] tools: get_workspace_info, list_directory, search_text, read_file, run_workspace_command, request_local_http, start_workspace_process, stop_workspace_process, workspace_process_status, workspace_process_logs, wait_for_local_service, edit_file, write_file, create_directory, delete_path");
-	console.warn("[onionBridge] WARNING: OAuth is not used. File operations are auto-approved. Use at your own risk.");
+	console.log(
+		"[onionBridge] tools: get_workspace_info, list_directory, search_text, read_file, run_workspace_command, request_local_http, start_workspace_process, stop_workspace_process, workspace_process_status, workspace_process_logs, wait_for_local_service, edit_file, write_file, create_directory, delete_path",
+	);
+	console.warn(
+		"[onionBridge] WARNING: OAuth is not used. File operations are auto-approved. Use at your own risk.",
+	);
 
-	const tunnel = spawn(config.tunnelBin, ["run", "--profile", config.profile], {
-		stdio: "inherit",
-		windowsHide: true,
-		env: process.env,
-	});
+	const tunnel = spawn(
+		config.tunnelBin,
+		["run", "--profile", config.tunnelProfile],
+		{
+			stdio: "inherit",
+			windowsHide: true,
+			env: process.env,
+		},
+	);
 
 	tunnel.once("spawn", () =>
-		console.log(`[onionBridge] tunnel: ${config.profile}`),
+		console.log(`[onionBridge] tunnel: ${config.tunnelProfile}`),
 	);
 	tunnel.on("error", (error) =>
 		console.error(`[onionBridge] tunnel failed: ${error.message}`),

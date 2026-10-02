@@ -1,38 +1,61 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { readSetup, runSetup } from "./setup.js";
+import { readGlobalSetup, readProfile, runSetup } from "./setup.js";
 
-const DEFAULT_PROFILE = "onion";
+export const DEFAULT_PROFILE = "default";
 
-export function profilePath(profile = DEFAULT_PROFILE) {
+export function tunnelProfilePath(profile = DEFAULT_PROFILE) {
 	const base =
 		process.platform === "win32"
 			? (process.env.APPDATA ?? path.join(os.homedir(), ".config"))
 			: path.join(os.homedir(), ".config");
-	return path.join(base, "tunnel-client", `${profile}.yaml`);
+	return path.join(base, "tunnel-client", `onion-${profile}.yaml`);
 }
 
-export async function loadConfig() {
-	const setup = (await readSetup()) ?? (await runSetup());
+export async function loadConfig(profileName = DEFAULT_PROFILE) {
 	const profile =
-		process.env.ONION_BRIDGE_PROFILE || setup.profile || DEFAULT_PROFILE;
-	const port = Number(process.env.ONION_BRIDGE_PORT || setup.port || 3737);
-	const token = process.env.ONION_BRIDGE_TOKEN || setup.token;
+		(await readProfile(profileName)) ?? (await runSetup(profileName));
+	const global = await readGlobalSetup();
 
-	await writeTunnelProfile({ profile, tunnelId: setup.tunnelId, token, port });
-	process.env.OPENAI_API_KEY = setup.apiKey;
+	const port = Number(process.env.ONION_BRIDGE_PORT || profile.port);
+	const token = process.env.ONION_BRIDGE_TOKEN || profile.token;
+	const tunnelProfile = `onion-${profileName}`;
+	const healthPort = profile.healthPort || nextHealthPort(port);
+
+	await writeTunnelProfile({
+		profile: tunnelProfile,
+		tunnelId: profile.tunnelId,
+		token,
+		port,
+		healthPort,
+	});
+	process.env.OPENAI_API_KEY = global.apiKey;
 
 	return {
-		profile,
+		name: profileName,
+		workspace: path.resolve(profile.workspace),
 		port,
 		token,
-		tunnelBin: process.env.ONION_BRIDGE_TUNNEL_BIN || setup.tunnelBin,
+		tunnelProfile,
+		tunnelBin: process.env.ONION_BRIDGE_TUNNEL_BIN || global.tunnelBin,
 	};
 }
 
-async function writeTunnelProfile({ profile, tunnelId, token, port }) {
-	const file = profilePath(profile);
+function nextHealthPort(port) {
+	const candidate = port + 4000;
+	if (candidate <= 65535) return candidate;
+	return port - 1000;
+}
+
+async function writeTunnelProfile({
+	profile,
+	tunnelId,
+	token,
+	port,
+	healthPort,
+}) {
+	const file = tunnelProfilePath(profile.replace(/^onion-/, ""));
 	await fs.mkdir(path.dirname(file), { recursive: true });
 	const yaml = `config_version: 1
 
@@ -42,7 +65,7 @@ control_plane:
   api_key: "env:OPENAI_API_KEY"
 
 health:
-  listen_addr: "127.0.0.1:8080"
+  listen_addr: "127.0.0.1:${healthPort}"
 
 admin_ui:
   open_browser: false
