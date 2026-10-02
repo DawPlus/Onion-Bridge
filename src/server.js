@@ -56,6 +56,7 @@ export async function startBridge() {
 
 	console.log(`[onionBridge] workspace: ${root}`);
 	console.log(`[onionBridge] MCP: http://127.0.0.1:${config.port}/mcp`);
+	console.log("[onionBridge] tools: get_workspace_info, list_directory, search_text, read_file, run_workspace_command, request_local_http, start_workspace_process, stop_workspace_process, workspace_process_status, workspace_process_logs, wait_for_local_service, edit_file, write_file, create_directory, delete_path");
 	console.warn("[onionBridge] WARNING: OAuth is not used. File operations are auto-approved. Use at your own risk.");
 
 	const tunnel = spawn(config.tunnelBin, ["run", "--profile", config.profile], {
