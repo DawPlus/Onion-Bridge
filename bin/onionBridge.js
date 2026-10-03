@@ -26,9 +26,11 @@ if (first === "setup") {
 } else if (first === "profiles") {
 	action = printProfiles();
 } else if (first === "start") {
-	action = startBridge(args[1] || "default");
+	action = args[1]
+		? startBridge(args[1])
+		: startBridge("default", process.cwd());
 } else if (!first) {
-	action = startBridge("default");
+	action = startBridge("default", process.cwd());
 } else if (first.startsWith("-")) {
 	console.error(`알 수 없는 옵션: ${first}`);
 	printHelp();
@@ -58,8 +60,9 @@ function printHelp() {
 
 사용법:
   onion
-    기본(default) 프로필을 바로 실행합니다.
-    최초 실행에서만 설정을 만들고, 이후에는 저장된 값을 그대로 사용합니다.
+    기본(default) Tunnel 설정을 사용해 바로 실행합니다.
+    workspace는 onion을 실행한 현재 폴더를 사용합니다.
+    최초 실행에서만 기본 설정을 만들고, 이후에는 다시 묻지 않습니다.
 
   onion <profile>
     지정한 프로필을 실행합니다.

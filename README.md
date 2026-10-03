@@ -74,13 +74,13 @@ Existing single-profile Onion Bridge configuration remains usable as the `defaul
 
 ## Usage
 
-Start the default profile:
+Start with the default Tunnel settings and use the current directory as the workspace:
 
 ```bash
 onion
 ```
 
-Start a named profile:
+Start a named profile using its saved workspace:
 
 ```bash
 onion acorns

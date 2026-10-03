@@ -17,8 +17,8 @@ function createMcp(root) {
 	return server;
 }
 
-export async function startBridge(profileName = "default") {
-	const config = await loadConfig(profileName);
+export async function startBridge(profileName = "default", workspaceOverride) {
+	const config = await loadConfig(profileName, workspaceOverride);
 	const root = config.workspace;
 	const app = express();
 	app.disable("x-powered-by");

@@ -10,7 +10,7 @@ const errorText = (value) => ({
 	isError: true,
 });
 
-const COMMANDS = new Set(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn", "git"]);
+const COMMANDS = new Set(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn", "git", "codex", "grok", "agy"]);
 const MAX_COMMAND_OUTPUT = 80_000;
 const MAX_HTTP_BODY = 80_000;
 const MAX_PROCESS_OUTPUT = 120_000;
@@ -146,7 +146,7 @@ export function registerTools(server, root) {
 			description:
 				"Run an allowed development command inside the workspace with shell disabled. Returns exit code, stdout, and stderr.",
 			inputSchema: {
-				command: z.enum(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn", "git"]),
+				command: z.enum(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn", "git", "codex", "grok", "agy"]),
 				args: z.array(z.string()).optional(),
 				cwd: z.string().optional(),
 				timeout_ms: z.number().int().min(1).max(600_000).optional(),
@@ -300,7 +300,7 @@ export function registerTools(server, root) {
 			description:
 				"Start a long-running development process in the workspace and return a process_id.",
 			inputSchema: {
-				command: z.enum(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn"]),
+				command: z.enum(["npm", "pnpm", "npx", "node", "bun", "bunx", "yarn", "codex", "grok", "agy"]),
 				args: z.array(z.string()).optional(),
 				cwd: z.string().optional(),
 			},

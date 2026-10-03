@@ -13,7 +13,7 @@ export function tunnelProfilePath(profile = DEFAULT_PROFILE) {
 	return path.join(base, "tunnel-client", `onion-${profile}.yaml`);
 }
 
-export async function loadConfig(profileName = DEFAULT_PROFILE) {
+export async function loadConfig(profileName = DEFAULT_PROFILE, workspaceOverride) {
 	const profile =
 		(await readProfile(profileName)) ?? (await runSetup(profileName));
 	const global = await readGlobalSetup();
@@ -34,7 +34,7 @@ export async function loadConfig(profileName = DEFAULT_PROFILE) {
 
 	return {
 		name: profileName,
-		workspace: path.resolve(profile.workspace),
+		workspace: path.resolve(workspaceOverride || profile.workspace),
 		port,
 		token,
 		tunnelProfile,
