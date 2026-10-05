@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { spawnSync } from "node:child_process";
 
 const PICKER_TIMEOUT_MS = 5 * 60 * 1000;

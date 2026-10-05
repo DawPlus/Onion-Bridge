@@ -11,7 +11,7 @@ import {
 	saveWebSettings,
 	toPublicSetupSettings,
 	updateProjectFlags,
-} from "../../src/control/settings.js";
+} from "../../dist/control/settings.js";
 
 async function tempDir() {
 	return fs.mkdtemp(path.join(os.tmpdir(), "onion-web-settings-"));

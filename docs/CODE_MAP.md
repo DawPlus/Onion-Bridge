@@ -20,11 +20,11 @@ Rules:
 ```text
 CLI / MCP bridge
 Entry: bin/onionBridge.js
-Related: src/server.js, src/setup.js
+Related: src/cli.ts, src/server.ts (Nest BridgeModule)
 
 Web control API
-Entry: src/control/server.js
-Related: src/control/api.js, src/control/processManager.js
+Entry: src/control/server.ts
+Related: src/control/api.ts, src/control/control.module.ts
 
 Web UI
 Entry: apps/web/src/routes/index.tsx

@@ -9,7 +9,7 @@ import {
 	isDirectChild,
 	isEligibleProfileProject,
 	listChildProjects,
-} from "../../src/control/discover.js";
+} from "../../dist/control/discover.js";
 
 async function writePkg(folder) {
 	await fs.mkdir(folder, { recursive: true });

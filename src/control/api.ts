@@ -1,4 +1,5 @@
-import express from "express";
+// @ts-nocheck
+import express, { type Express } from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {
@@ -228,7 +229,7 @@ export function createControlApp({
 	browseFolder = browseFolderDialog,
 	detectRunning = detectRunningBridges,
 	stopExternal = stopExternalBridge,
-} = {}) {
+} = {}): Express {
 	if (!processManager) throw new Error("processManager is required");
 
 	const app = express();

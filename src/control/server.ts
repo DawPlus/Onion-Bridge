@@ -1,11 +1,15 @@
+import "reflect-metadata";
 import { spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
+import { NestFactory } from "@nestjs/core";
+import { ExpressAdapter } from "@nestjs/platform-express";
 import { createControlApp } from "./api.js";
-import { createProcessManager } from "./processManager.js";
+import { ControlModule } from "./control.module.js";
 import { createDevProcessManager } from "./devProcessManager.js";
+import { createProcessManager } from "./processManager.js";
 import { DEFAULT_CONTROL_PORT, loadWebSettings } from "./settings.js";
 
 const packageRoot = path.resolve(
@@ -16,7 +20,7 @@ const bridgeEntry = path.join(packageRoot, "bin", "onionBridge.js");
 const webRoot = path.join(packageRoot, "apps", "web");
 const webDist = path.join(webRoot, "dist");
 
-async function pathExists(target) {
+async function pathExists(target: string) {
 	try {
 		await fs.access(target);
 		return true;
@@ -49,18 +53,21 @@ async function ensureWebDist() {
 	return pathExists(path.join(webDist, "index.html"));
 }
 
-export async function startControlServer({ port } = {}) {
+export async function startControlServer({ port }: { port?: number } = {}) {
 	const settings = await loadWebSettings();
 	const listenPort = port || settings.controlPort || DEFAULT_CONTROL_PORT;
-	const processManager = createProcessManager({ bridgeEntry });
+	const processManager = createProcessManager({ bridgeEntry } as any);
 	const devProcessManager = createDevProcessManager();
-	const app = createControlApp({ processManager, devProcessManager });
+	const expressApp = createControlApp({
+		processManager,
+		devProcessManager,
+	} as any);
 
 	const hasWebDist = await ensureWebDist();
 
 	if (hasWebDist) {
-		app.use(express.static(webDist));
-		app.use((req, res, next) => {
+		expressApp.use(express.static(webDist));
+		expressApp.use((req, res, next) => {
 			if (req.method !== "GET" && req.method !== "HEAD") return next();
 			if (req.path.startsWith("/api/")) return next();
 			res.sendFile(path.join(webDist, "index.html"), (error) => {
@@ -69,10 +76,12 @@ export async function startControlServer({ port } = {}) {
 		});
 	}
 
-	const http = await new Promise((resolve, reject) => {
-		const instance = app.listen(listenPort, "127.0.0.1", () => resolve(instance));
-		instance.once("error", reject);
-	});
+	const nestApp = await NestFactory.create(
+		ControlModule,
+		new ExpressAdapter(expressApp),
+		{ logger: ["error", "warn"] },
+	);
+	await nestApp.listen(listenPort, "127.0.0.1");
 
 	console.log(`[onionWeb] control API: http://127.0.0.1:${listenPort}/api`);
 	if (hasWebDist) {
@@ -95,7 +104,8 @@ export async function startControlServer({ port } = {}) {
 		} catch {
 			// Best-effort shutdown.
 		}
-		http.close(() => process.exit(0));
+		await nestApp.close();
+		process.exit(0);
 	};
 
 	process.once("SIGINT", () => {
@@ -105,5 +115,11 @@ export async function startControlServer({ port } = {}) {
 		void stop();
 	});
 
-	return { http, port: listenPort, processManager, devProcessManager };
+	return {
+		http: nestApp.getHttpServer(),
+		port: listenPort,
+		processManager,
+		devProcessManager,
+		nestApp,
+	};
 }

@@ -4,9 +4,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createControlApp } from "../../src/control/api.js";
-import { createProcessManager } from "../../src/control/processManager.js";
-import { saveWebSettings } from "../../src/control/settings.js";
+import { createControlApp } from "../../dist/control/api.js";
+import { createProcessManager } from "../../dist/control/processManager.js";
+import { saveWebSettings } from "../../dist/control/settings.js";
 
 async function withServer(app, run) {
 	const server = await new Promise((resolve, reject) => {

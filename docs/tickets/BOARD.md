@@ -6,7 +6,8 @@ This board is the status source of truth.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T-261003-01 | Web Onion control MVP | in_progress | worker | worker | implementation | 1+2 | - | Human QA expanded scope: per-project controls, folder picker, setup settings, UI polish. |
 | T-261003-02 | Web dashboard and settings UI | superseded | - | worker | implementation | 1+2 | T-261003-01 | Merged into T-261003-01. |
-| T-261005-01 | Add OAuth protection to MCP endpoint | ready | worker | worker | implementation | 1+2 | [ticket](T-261005-01.md) | Replace shared static bearer auth with configurable OAuth resource-server validation. |
+| T-261005-02 | Migrate backend to NestJS + TypeScript | ready | worker | worker | implementation | 1+2 | [ticket](T-261005-02.md) | Thin Nest+TS move for CLI/MCP/control; no OAuth in this ticket. Blocks T-261005-01. |
+| T-261005-01 | Add OAuth protection to MCP endpoint | blocked | worker | worker | implementation | 1+2 | [ticket](T-261005-01.md) | Blocked on T-261005-02. OAuth resource-server validation on Nest after migration. |
 
 Allowed states: `draft`, `ready`, `in_progress`, `review`, `ready_for_qa`, `blocked`, `done`, `superseded`.
 

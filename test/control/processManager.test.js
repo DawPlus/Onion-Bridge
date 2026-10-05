@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
-import { createProcessManager } from "../../src/control/processManager.js";
+import { createProcessManager } from "../../dist/control/processManager.js";
 
 function fakeChild({ pid = 4242 } = {}) {
 	const child = new EventEmitter();

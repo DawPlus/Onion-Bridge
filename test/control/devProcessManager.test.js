@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { createDevProcessManager } from "../../src/control/devProcessManager.js";
+import { createDevProcessManager } from "../../dist/control/devProcessManager.js";
 
 function fakeChild(pid = 1) {
   const child = new EventEmitter();

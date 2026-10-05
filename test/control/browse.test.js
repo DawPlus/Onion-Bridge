@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { browseFolderDialog } from "../../src/control/browse.js";
+import { browseFolderDialog } from "../../dist/control/browse.js";
 
 test("darwin returns selected POSIX path", () => {
 	const result = browseFolderDialog({

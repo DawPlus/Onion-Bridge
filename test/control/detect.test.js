@@ -4,7 +4,7 @@ import {
 	detectRunningBridges,
 	probeBridgeHealth,
 	stopExternalBridge,
-} from "../../src/control/detect.js";
+} from "../../dist/control/detect.js";
 
 test("probeBridgeHealth returns null when port is down", async () => {
 	const result = await probeBridgeHealth(1, {
