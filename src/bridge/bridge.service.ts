@@ -3,6 +3,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import type { Request, Response } from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { AuthService } from "../auth/auth.service.js";
+import type { BridgeAuthConfig } from "../auth/types.js";
 import { loadConfig } from "../config.js";
 import { registerTools } from "../tools.js";
 
@@ -14,6 +16,8 @@ export class BridgeService {
 	private tunnel: ChildProcess | null = null;
 	private stopping = false;
 	private closeHttp: (() => void) | null = null;
+
+	constructor(private readonly auth: AuthService) {}
 
 	async init(
 		profileName = "default",
@@ -38,13 +42,16 @@ export class BridgeService {
 			workspace: config.workspace,
 			pid: process.pid,
 			port: config.port,
+			authMode: config.auth.mode,
 		};
 	}
 
 	async handleMcp(req: Request, res: Response): Promise<void> {
 		const config = this.getConfig();
-		if (req.headers.authorization !== `Bearer ${config.token}`) {
-			res.status(401).json({ error: "Unauthorized" });
+		const auth = config.auth as BridgeAuthConfig;
+		const result = await this.auth.authenticateRequest(req, auth);
+		if (result.ok === false) {
+			this.auth.writeAuthFailure(res, result, auth.oauth);
 			return;
 		}
 
@@ -73,12 +80,27 @@ export class BridgeService {
 		console.log(`[onionBridge] profile: ${config.name}`);
 		console.log(`[onionBridge] workspace: ${config.workspace}`);
 		console.log(`[onionBridge] MCP: http://127.0.0.1:${config.port}/mcp`);
+		console.log(`[onionBridge] auth: ${config.auth.mode}`);
 		console.log(
 			"[onionBridge] tools: get_workspace_info, list_directory, search_text, read_file, run_workspace_command, request_local_http, start_workspace_process, stop_workspace_process, workspace_process_status, workspace_process_logs, wait_for_local_service, edit_file, write_file, create_directory, delete_path",
 		);
-		console.warn(
-			"[onionBridge] WARNING: OAuth is not used. File operations are auto-approved. Use at your own risk.",
-		);
+
+		if (config.auth.mode === "oauth") {
+			console.log(
+				`[onionBridge] OAuth resource: ${config.auth.oauth.resource}`,
+			);
+			console.log(
+				`[onionBridge] OAuth metadata: http://127.0.0.1:${config.port}/.well-known/oauth-protected-resource`,
+			);
+		} else if (config.auth.mode === "none") {
+			console.warn(
+				"[onionBridge] WARNING: auth mode is none. MCP endpoint accepts unauthenticated requests.",
+			);
+		} else {
+			console.warn(
+				"[onionBridge] WARNING: static bearer token auth is enabled. File operations are auto-approved. Use at your own risk.",
+			);
+		}
 
 		this.tunnel = spawn(
 			config.tunnelBin,

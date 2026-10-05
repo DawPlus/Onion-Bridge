@@ -5,6 +5,7 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router'
+import { ControlAuthGate } from '../components/ControlAuthGate'
 import { DotGrid } from '../components/DotGrid'
 import { ToastProvider } from '../components/Toast'
 import {
@@ -112,7 +113,9 @@ function RootComponent() {
           </div>
         </header>
         <main className="ob-main">
-          <Outlet />
+          <ControlAuthGate>
+            <Outlet />
+          </ControlAuthGate>
         </main>
       </div>
     </ToastProvider>

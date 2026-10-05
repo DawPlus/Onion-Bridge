@@ -6,8 +6,13 @@ This board is the status source of truth.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | T-261003-01 | Web Onion control MVP | in_progress | worker | worker | implementation | 1+2 | - | Human QA expanded scope: per-project controls, folder picker, setup settings, UI polish. |
 | T-261003-02 | Web dashboard and settings UI | superseded | - | worker | implementation | 1+2 | T-261003-01 | Merged into T-261003-01. |
-| T-261005-02 | Migrate backend to NestJS + TypeScript | ready | worker | worker | implementation | 1+2 | [ticket](T-261005-02.md) | Thin Nest+TS move for CLI/MCP/control; no OAuth in this ticket. Blocks T-261005-01. |
-| T-261005-01 | Add OAuth protection to MCP endpoint | blocked | worker | worker | implementation | 1+2 | [ticket](T-261005-01.md) | Blocked on T-261005-02. OAuth resource-server validation on Nest after migration. |
+| T-261005-02 | Migrate backend to NestJS + TypeScript | done | - | worker | implementation | 1+2 | [ticket](T-261005-02.md) | Merged to main. Unblocks T-261005-01. |
+| T-261005-01 | Add OAuth protection to MCP endpoint | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-01.md) | Worker complete: auth modes none/token/oauth, scopes, metadata, tests green. |
+| T-261005-03 | Add authentication to web control API and UI | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-03.md) | Worker complete: local/token control auth, unlock UI, tests green. |
+| T-261005-04 | Remote access via Tailscale Serve (home-away) | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-04.md) | Worker complete: docs/REMOTE_ACCESS.md + onion remote; tests green. |
+| T-261005-05 | Daily control-secret rotation + Serve handoff | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-05.md) | Worker complete: pnpm rotate, ports, docs, tests. |
+| T-261005-06 | KakaoTalk delivery + today’s-secret chatbot skill | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-06.md) | Worker complete: kakao login/test/notify + skill webhook. Awaiting owner keys+login. |
+| T-261005-07 | Web + Tailscale Serve lifecycle (status/up/stop) | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-07.md) | Worker complete: pnpm status/up/stop + PID/health. |
 
 Allowed states: `draft`, `ready`, `in_progress`, `review`, `ready_for_qa`, `blocked`, `done`, `superseded`.
 

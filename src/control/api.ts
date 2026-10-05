@@ -24,6 +24,12 @@ import {
 	ensureProjectProfile,
 	removeProjectPath,
 } from "./projects.js";
+import { handleKakaoSkill } from "../kakao/skill.js";
+import { loadKakaoConfig } from "../kakao/config.js";
+import {
+	createControlAuthMiddleware,
+	resolveControlAuthConfig,
+} from "./auth.js";
 import {
 	isMaskedSecretInput,
 	loadWebSettings,
@@ -236,9 +242,62 @@ export function createControlApp({
 	app.disable("x-powered-by");
 	app.use(express.json({ limit: "1mb" }));
 
+	async function getControlAuth() {
+		const web = await loadWebSettings({ rootDir });
+		return resolveControlAuthConfig({
+			mode: web.controlAuthMode,
+			token: web.controlToken,
+		});
+	}
+
 	app.get("/api/health", (_req, res) => {
 		res.json({ status: "ok" });
 	});
+
+	app.get("/api/auth", async (_req, res) => {
+		try {
+			const auth = await getControlAuth();
+			res.json({
+				mode: auth.mode,
+				required: auth.mode === "token",
+				tokenConfigured: Boolean(auth.token),
+			});
+		} catch (error) {
+			res.status(500).json({
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+	});
+
+	// Open Builder skill webhook (optional shared secret via kakao.json skillSecret).
+	app.post("/api/kakao/skill", async (req, res) => {
+		try {
+			const kakao = await loadKakaoConfig().catch(() => null);
+			const expected =
+				(kakao && (kakao as { skillSecret?: string }).skillSecret) ||
+				process.env.ONION_KAKAO_SKILL_SECRET ||
+				"";
+			if (expected) {
+				const provided = String(
+					req.headers["x-onion-skill-secret"] || "",
+				);
+				if (provided !== expected) {
+					res.status(401).json({ error: "Unauthorized skill webhook" });
+					return;
+				}
+			}
+			await handleKakaoSkill(req, res);
+		} catch (error) {
+			res.status(500).json({
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+	});
+
+	app.use(
+		"/api",
+		createControlAuthMiddleware(getControlAuth),
+	);
 
 	app.get("/api/status", (_req, res) => {
 		res.json(processManager.getStatus());

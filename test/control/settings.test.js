@@ -23,6 +23,8 @@ test("loadWebSettings returns defaults when file missing", async () => {
 	assert.deepEqual(settings.projects, []);
 	assert.equal(settings.defaultProfile, "default");
 	assert.equal(settings.controlPort, DEFAULT_CONTROL_PORT);
+	assert.equal(settings.controlAuthMode, "local");
+	assert.equal(settings.controlToken, null);
 });
 
 test("saveWebSettings persists project entries and omits secrets", async () => {
@@ -48,6 +50,31 @@ test("saveWebSettings persists project entries and omits secrets", async () => {
 	]);
 	assert.equal(raw.apiKey, undefined);
 	assert.equal(raw.token, undefined);
+	assert.equal(raw.controlAuthMode, "local");
+});
+
+test("saveWebSettings persists control auth mode and token", async () => {
+	const dir = await tempDir();
+	await saveWebSettings(
+		{
+			controlAuthMode: "token",
+			controlToken: "control-secret",
+		},
+		{ rootDir: dir },
+	);
+	const raw = JSON.parse(await fs.readFile(path.join(dir, "web.json"), "utf8"));
+	assert.equal(raw.controlAuthMode, "token");
+	assert.equal(raw.controlToken, "control-secret");
+
+	const publicSettings = (
+		await import("../../dist/control/settings.js")
+	).toPublicSetupSettings({
+		web: await loadWebSettings({ rootDir: dir }),
+	});
+	assert.equal(publicSettings.controlAuthMode, "token");
+	assert.equal(publicSettings.controlTokenPresent, true);
+	assert.equal(publicSettings.controlToken, undefined);
+	assert.match(publicSettings.controlTokenMasked, /•/);
 });
 
 test("maskSecret and public settings never expose full secrets", () => {

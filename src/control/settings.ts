@@ -79,6 +79,16 @@ export function sanitizePublicSettings(input = {}) {
 			: "default";
 
 	const controlPort = Number(input.controlPort);
+	const authModeRaw =
+		typeof input.controlAuthMode === "string"
+			? input.controlAuthMode.trim().toLowerCase()
+			: "local";
+	const controlAuthMode = authModeRaw === "token" ? "token" : "local";
+	const controlToken =
+		typeof input.controlToken === "string" && input.controlToken.trim()
+			? input.controlToken.trim()
+			: null;
+
 	return {
 		projects,
 		projectEntries: normalizeProjectList(input.projects),
@@ -89,6 +99,8 @@ export function sanitizePublicSettings(input = {}) {
 			Number.isInteger(controlPort) && controlPort > 0 && controlPort <= 65535
 				? controlPort
 				: DEFAULT_CONTROL_PORT,
+		controlAuthMode,
+		controlToken,
 	};
 }
 
@@ -102,7 +114,25 @@ export async function loadWebSettings({ rootDir = defaultRootDir() } = {}) {
 }
 
 export async function saveWebSettings(input, { rootDir = defaultRootDir() } = {}) {
-	const settings = sanitizePublicSettings(input);
+	const current = await loadWebSettings({ rootDir });
+	const settings = sanitizePublicSettings({
+		...current,
+		...input,
+		controlToken:
+			input?.controlToken !== undefined
+				? input.controlToken
+				: current.controlToken,
+	});
+
+	// Keep existing control token when UI sends masked placeholder.
+	let controlToken = settings.controlToken;
+	if (
+		input?.controlToken !== undefined &&
+		isMaskedSecretInput(input.controlToken, maskSecret(current.controlToken).masked)
+	) {
+		controlToken = current.controlToken;
+	}
+
 	const persisted = {
 		projects: settings.projectEntries.map((item) =>
 			item.profileName
@@ -113,13 +143,15 @@ export async function saveWebSettings(input, { rootDir = defaultRootDir() } = {}
 		hidden: settings.hidden,
 		defaultProfile: settings.defaultProfile,
 		controlPort: settings.controlPort,
+		controlAuthMode: settings.controlAuthMode,
+		...(controlToken ? { controlToken } : {}),
 	};
 	await fs.mkdir(rootDir, { recursive: true });
 	await fs.writeFile(settingsPath(rootDir), JSON.stringify(persisted, null, 2), {
 		encoding: "utf8",
 		mode: 0o600,
 	});
-	return settings;
+	return sanitizePublicSettings(persisted);
 }
 
 export function toPublicSetupSettings({
@@ -132,6 +164,7 @@ export function toPublicSetupSettings({
 	const maskedKey = maskSecret(apiKey);
 	const maskedToken = maskSecret(token);
 
+	const controlTokenMasked = maskSecret(web?.controlToken);
 	return {
 		projects: web?.projects || [],
 		projectEntries: web?.projectEntries || [],
@@ -139,6 +172,9 @@ export function toPublicSetupSettings({
 		hidden: web?.hidden || [],
 		defaultProfile: web?.defaultProfile || "default",
 		controlPort: web?.controlPort || DEFAULT_CONTROL_PORT,
+		controlAuthMode: web?.controlAuthMode || "local",
+		controlTokenPresent: controlTokenMasked.present,
+		controlTokenMasked: controlTokenMasked.masked,
 		tunnelBin: globalSetup?.tunnelBin || "",
 		tunnelId: defaultProfile?.tunnelId || "",
 		apiKeyPresent: maskedKey.present,

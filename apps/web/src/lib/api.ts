@@ -54,11 +54,22 @@ export type WorkspaceRoot = {
   name: string
 }
 
+export type ControlAuthMode = 'local' | 'token'
+
+export type AuthStatusResponse = {
+  mode: ControlAuthMode
+  required: boolean
+  tokenConfigured: boolean
+}
+
 export type SettingsResponse = {
   projects: string[]
   projectEntries: Array<{ path: string; profileName: string | null }>
   defaultProfile: string
   controlPort: number
+  controlAuthMode: ControlAuthMode
+  controlTokenPresent: boolean
+  controlTokenMasked: string
   tunnelBin: string
   tunnelId: string
   apiKeyPresent: boolean
@@ -71,20 +82,61 @@ export type SaveSettingsInput = {
   projects?: Array<string | { path: string; profileName?: string | null }>
   defaultProfile?: string
   controlPort?: number
+  controlAuthMode?: ControlAuthMode
+  controlToken?: string
   tunnelBin?: string
   tunnelId?: string
   apiKey?: string
 }
 
+const CONTROL_TOKEN_STORAGE_KEY = 'onion.controlToken'
+
+export class ApiUnauthorizedError extends Error {
+  status = 401
+  constructor(message = 'Unauthorized') {
+    super(message)
+    this.name = 'ApiUnauthorizedError'
+  }
+}
+
+export function readControlToken(): string | null {
+  if (typeof window === 'undefined') return null
+  const value = window.sessionStorage.getItem(CONTROL_TOKEN_STORAGE_KEY)
+  return value && value.trim() ? value.trim() : null
+}
+
+export function writeControlToken(token: string | null): void {
+  if (typeof window === 'undefined') return
+  if (!token || !token.trim()) {
+    window.sessionStorage.removeItem(CONTROL_TOKEN_STORAGE_KEY)
+    return
+  }
+  window.sessionStorage.setItem(CONTROL_TOKEN_STORAGE_KEY, token.trim())
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+    ...((init?.headers as Record<string, string>) || {}),
+  }
+  const token = readControlToken()
+  if (token && !headers.authorization && !headers.Authorization) {
+    headers.authorization = `Bearer ${token}`
+  }
+
   const res = await fetch(path, {
     ...init,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers || {}),
-    },
+    headers,
   })
   const body = await res.json().catch(() => ({}))
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('onion-control-unauthorized'))
+    }
+    throw new ApiUnauthorizedError(
+      typeof body.error === 'string' ? body.error : 'Unauthorized',
+    )
+  }
   if (!res.ok) {
     throw new Error(
       typeof body.error === 'string' ? body.error : `Request failed (${res.status})`,
@@ -94,6 +146,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  auth: () => request<AuthStatusResponse>('/api/auth'),
   status: () => request<StatusResponse>('/api/status'),
   projects: () =>
     request<{ projects: Project[]; roots: WorkspaceRoot[] }>('/api/projects'),
@@ -125,8 +178,19 @@ export const api = {
       },
     ),
   browseFolder: async () => {
-    const res = await fetch('/api/browse-folder', { method: 'POST' })
+    const headers: Record<string, string> = {}
+    const token = readControlToken()
+    if (token) headers.authorization = `Bearer ${token}`
+    const res = await fetch('/api/browse-folder', { method: 'POST', headers })
     const body = await res.json().catch(() => ({}))
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('onion-control-unauthorized'))
+      }
+      throw new ApiUnauthorizedError(
+        typeof body.error === 'string' ? body.error : 'Unauthorized',
+      )
+    }
     if (res.status === 501) {
       return {
         unsupported: true as const,

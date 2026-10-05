@@ -8,6 +8,7 @@ import { NestFactory } from "@nestjs/core";
 import { ExpressAdapter } from "@nestjs/platform-express";
 import { createControlApp } from "./api.js";
 import { ControlModule } from "./control.module.js";
+import { clearWebPid, writeWebPid } from "../runtime/lifecycle.js";
 import { createDevProcessManager } from "./devProcessManager.js";
 import { createProcessManager } from "./processManager.js";
 import { DEFAULT_CONTROL_PORT, loadWebSettings } from "./settings.js";
@@ -82,8 +83,10 @@ export async function startControlServer({ port }: { port?: number } = {}) {
 		{ logger: ["error", "warn"] },
 	);
 	await nestApp.listen(listenPort, "127.0.0.1");
+	await writeWebPid(process.pid);
 
 	console.log(`[onionWeb] control API: http://127.0.0.1:${listenPort}/api`);
+	console.log(`[onionWeb] pid: ${process.pid}`);
 	if (hasWebDist) {
 		console.log(`[onionWeb] UI: http://127.0.0.1:${listenPort}/`);
 	} else {
@@ -104,6 +107,7 @@ export async function startControlServer({ port }: { port?: number } = {}) {
 		} catch {
 			// Best-effort shutdown.
 		}
+		await clearWebPid();
 		await nestApp.close();
 		process.exit(0);
 	};

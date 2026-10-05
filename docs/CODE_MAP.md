@@ -20,14 +20,26 @@ Rules:
 ```text
 CLI / MCP bridge
 Entry: bin/onionBridge.js
-Related: src/cli.ts, src/server.ts (Nest BridgeModule)
+Related: src/bridge/bridge.service.ts, src/auth/authenticate.ts
 
 Web control API
 Entry: src/control/server.ts
-Related: src/control/api.ts, src/control/control.module.ts
+Related: src/control/api.ts, src/control/auth.ts
 
 Web UI
 Entry: apps/web/src/routes/index.tsx
 Related: apps/web/src/routes/settings.tsx, apps/web/src/lib/api.ts
+
+Remote access
+Entry: docs/REMOTE_ACCESS.md
+Related: src/remote/tailscaleServe.ts, src/runtime/lifecycle.ts
+
+Secret rotation / handoff
+Entry: src/handoff/rotate.ts
+Related: src/handoff/secretGenerator.ts, docs/SECRET_ROTATION.md
+
+Kakao notify / skill
+Entry: src/kakao/client.ts
+Related: src/kakao/skill.ts, docs/KAKAO_SETUP.md
 ```
 

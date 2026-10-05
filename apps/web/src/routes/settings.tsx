@@ -1,7 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { createFileRoute } from '@tanstack/react-router'
 import { KineticText } from '../components/KineticText'
-import { api, type SettingsResponse } from '../lib/api'
+import {
+  api,
+  writeControlToken,
+  type SettingsResponse,
+} from '../lib/api'
 
 export const Route = createFileRoute('/settings')({ component: SettingsPage })
 
@@ -9,6 +13,11 @@ function SettingsPage() {
   const [projectsText, setProjectsText] = useState('')
   const [defaultProfile, setDefaultProfile] = useState('default')
   const [controlPort, setControlPort] = useState(3847)
+  const [controlAuthMode, setControlAuthMode] = useState<'local' | 'token'>(
+    'local',
+  )
+  const [controlToken, setControlToken] = useState('')
+  const [controlTokenMasked, setControlTokenMasked] = useState('')
   const [tunnelBin, setTunnelBin] = useState('')
   const [tunnelId, setTunnelId] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -22,6 +31,9 @@ function SettingsPage() {
     setProjectsText(settings.projects.join('\n'))
     setDefaultProfile(settings.defaultProfile)
     setControlPort(settings.controlPort)
+    setControlAuthMode(settings.controlAuthMode || 'local')
+    setControlTokenMasked(settings.controlTokenMasked || '')
+    setControlToken(settings.controlTokenMasked || '')
     setTunnelBin(settings.tunnelBin || '')
     setTunnelId(settings.tunnelId || '')
     setApiKeyMasked(settings.apiKeyMasked || '')
@@ -48,17 +60,32 @@ function SettingsPage() {
         .split(/\r?\n/)
         .map((line) => line.trim())
         .filter(Boolean)
+      const typedControlToken = controlToken.trim()
       const saved = await api.saveSettings({
         projects,
         defaultProfile,
         controlPort: Number(controlPort),
+        controlAuthMode,
+        controlToken,
         tunnelBin,
         tunnelId,
         apiKey,
       })
+      // Keep this browser session authorized after enabling token mode.
+      if (controlAuthMode === 'token') {
+        if (typedControlToken && !typedControlToken.includes('•')) {
+          writeControlToken(typedControlToken)
+        }
+      } else {
+        writeControlToken(null)
+      }
       applySettings(saved)
       setMessageTone('ok')
-      setMessage('Settings saved. Secrets stay masked in the UI.')
+      setMessage(
+        controlAuthMode === 'token'
+          ? '저장됨. token 모드가 켜졌습니다. 이 브라우저는 방금 입력한 Control token으로 유지됩니다. 새로고침 후에는 잠금 해제 화면에 같은 토큰을 입력하세요.'
+          : 'Settings saved. Secrets stay masked in the UI.',
+      )
     } catch (error) {
       setMessageTone('warn')
       setMessage(error instanceof Error ? error.message : String(error))
@@ -175,6 +202,48 @@ function SettingsPage() {
                 className="ob-input"
                 value={controlPort}
                 onChange={(event) => setControlPort(Number(event.target.value))}
+              />
+            </div>
+            <div className="ob-field">
+              <label className="ob-label" htmlFor="control-auth-mode">
+                Control auth mode
+              </label>
+              <p className="ob-hint">
+                Use <code>local</code> on a trusted machine only. Switch to{' '}
+                <code>token</code> before Tailscale/remote access.
+              </p>
+              <select
+                id="control-auth-mode"
+                className="ob-input"
+                value={controlAuthMode}
+                onChange={(event) =>
+                  setControlAuthMode(
+                    event.target.value === 'token' ? 'token' : 'local',
+                  )
+                }
+              >
+                <option value="local">local (no API auth)</option>
+                <option value="token">token (require bearer)</option>
+              </select>
+            </div>
+            <div className="ob-field">
+              <label className="ob-label" htmlFor="control-token">
+                Control token
+              </label>
+              <p className="ob-hint">
+                {controlTokenMasked
+                  ? `Saved value: ${controlTokenMasked}. Leave as-is to keep it, or paste a new token.`
+                  : 'Required when auth mode is token. Also settable via ONION_CONTROL_TOKEN.'}
+              </p>
+              <input
+                id="control-token"
+                className="ob-input"
+                type="password"
+                value={controlToken}
+                onChange={(event) => setControlToken(event.target.value)}
+                placeholder={controlTokenMasked || 'control-secret'}
+                autoComplete="off"
+                spellCheck={false}
               />
             </div>
           </div>
