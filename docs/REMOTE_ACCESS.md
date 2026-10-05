@@ -27,7 +27,7 @@ Daily control-secret rotation: see `docs/SECRET_ROTATION.md` (`pnpm rotate`).
 2. Set **Control auth mode** = `token`.
 3. Set a strong **Control token** and save.
 4. Confirm lock works: reload → unlock screen → enter the same Control token.
-5. For MCP used over Tailscale, keep MCP auth at `token` or `oauth` (`ONION_BRIDGE_AUTH_MODE`). Do not use `none` for remote.
+5. For MCP used over Tailscale, keep MCP auth at `token` (`ONION_BRIDGE_AUTH_MODE`). Do not use `none` for remote.
 
 Env alternatives:
 
@@ -35,7 +35,7 @@ Env alternatives:
 export ONION_CONTROL_AUTH_MODE=token
 export ONION_CONTROL_TOKEN='…'          # web control API
 
-export ONION_BRIDGE_AUTH_MODE=token     # MCP (or oauth)
+export ONION_BRIDGE_AUTH_MODE=token     # MCP
 # ONION_BRIDGE_TOKEN comes from the profile unless overridden
 ```
 
@@ -115,7 +115,6 @@ https://<home-magicdns>:8443/mcp
 Send MCP auth:
 
 - `token` mode: `Authorization: Bearer <profile-or-ONION_BRIDGE_TOKEN>`
-- `oauth` mode: access token from your IdP (`workspace:read|write|exec` scopes)
 
 ChatGPT should keep using **OpenAI Secure MCP Tunnel**, not this Tailscale URL.
 
@@ -140,7 +139,7 @@ ChatGPT should keep using **OpenAI Secure MCP Tunnel**, not this Tailscale URL.
 | Client cannot open URL | Home PC asleep/off; Tailscale not running; different tailnet |
 | Connection refused | `onion web` / bridge not running; Serve not started; wrong port |
 | Unlock loop / Unauthorized | Wrong **Control token**; still on `local` mode; old UI cache — hard refresh |
-| MCP 401 | Missing/wrong MCP bearer; `oauth` without JWT; using ChatGPT tunnel token by mistake |
+| MCP 401 | Missing/wrong MCP bearer; using wrong token by mistake |
 | Only works on home LAN | Hitting `127.0.0.1` on the client, or LAN IP instead of MagicDNS/Serve URL |
 | Serve URL works then dies | `tailscale serve reset` was run; home PC restarted without `--bg` serve |
 
@@ -164,7 +163,7 @@ If you need a public HTTPS hostname instead of Tailscale:
 
 1. Keep Onion on localhost.
 2. Run `cloudflared tunnel` (or Quick Tunnel) proxying to `http://127.0.0.1:3847` (and a second ingress for MCP if needed).
-3. Still require **control token** and MCP `token`/`oauth`.
+3. Still require **control token** and MCP `token`.
 4. Treat the hostname as sensitive; anyone with the URL can reach the proxy.
 
 Cloudflare is **not** required for the home-away phone/laptop case; Tailscale Serve is preferred.
@@ -173,6 +172,6 @@ Cloudflare is **not** required for the home-away phone/laptop case; Tailscale Se
 
 ## Related tickets
 
-- `T-261005-01` — MCP auth (`none` / `token` / `oauth`)
+- `T-261005-01` — MCP auth (`none` / `token`; oauth path later removed)
 - `T-261005-03` — Web control auth (`local` / `token`)
 - `T-261005-04` — This remote access path

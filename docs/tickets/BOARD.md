@@ -7,7 +7,7 @@ This board is the status source of truth.
 | T-261003-01 | Web Onion control MVP | in_progress | worker | worker | implementation | 1+2 | - | Human QA expanded scope: per-project controls, folder picker, setup settings, UI polish. |
 | T-261003-02 | Web dashboard and settings UI | superseded | - | worker | implementation | 1+2 | T-261003-01 | Merged into T-261003-01. |
 | T-261005-02 | Migrate backend to NestJS + TypeScript | done | - | worker | implementation | 1+2 | [ticket](T-261005-02.md) | Merged to main. Unblocks T-261005-01. |
-| T-261005-01 | Add OAuth protection to MCP endpoint | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-01.md) | Worker complete: auth modes none/token/oauth, scopes, metadata, tests green. |
+| T-261005-01 | Add OAuth protection to MCP endpoint | cancelled | - | worker | implementation | 1+2 | [ticket](T-261005-01.md) | MCP oauth/JWKS path removed — no current consumer. Keep none/token only. |
 | T-261005-03 | Add authentication to web control API and UI | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-03.md) | Worker complete: local/token control auth, unlock UI, tests green. |
 | T-261005-04 | Remote access via Tailscale Serve (home-away) | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-04.md) | Worker complete: docs/REMOTE_ACCESS.md + onion remote; tests green. |
 | T-261005-05 | Daily control-secret rotation + Serve handoff | review | coordinator | worker | implementation | 1+2 | [ticket](T-261005-05.md) | Worker complete: pnpm rotate, ports, docs, tests. |

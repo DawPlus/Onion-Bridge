@@ -51,7 +51,7 @@ export class BridgeService {
 		const auth = config.auth as BridgeAuthConfig;
 		const result = await this.auth.authenticateRequest(req, auth);
 		if (result.ok === false) {
-			this.auth.writeAuthFailure(res, result, auth.oauth);
+			this.auth.writeAuthFailure(res, result);
 			return;
 		}
 
@@ -85,14 +85,7 @@ export class BridgeService {
 			"[onionBridge] tools: get_workspace_info, list_directory, search_text, read_file, run_workspace_command, request_local_http, start_workspace_process, stop_workspace_process, workspace_process_status, workspace_process_logs, wait_for_local_service, edit_file, write_file, create_directory, delete_path",
 		);
 
-		if (config.auth.mode === "oauth") {
-			console.log(
-				`[onionBridge] OAuth resource: ${config.auth.oauth.resource}`,
-			);
-			console.log(
-				`[onionBridge] OAuth metadata: http://127.0.0.1:${config.port}/.well-known/oauth-protected-resource`,
-			);
-		} else if (config.auth.mode === "none") {
+		if (config.auth.mode === "none") {
 			console.warn(
 				"[onionBridge] WARNING: auth mode is none. MCP endpoint accepts unauthenticated requests.",
 			);

@@ -237,9 +237,7 @@ https://doh-macmini.tailb1def6.ts.net/
 | 용도 | 경로 | Onion auth |
 |------|------|------------|
 | ChatGPT | OpenAI Secure MCP Tunnel | MCP `token` 모드(기본 static bearer) |
-| 집 밖 내 브라우저/MCP 클라 | Tailscale Serve | 웹 `token` + (선택) MCP `oauth`/`token` |
-
-ChatGPT 경로에 Onion `oauth` 모드를 그대로 켜면 tunnel-client와 맞지 않을 수 있습니다.
+| 집 밖 내 브라우저/MCP 클라 | Tailscale Serve | 웹 `token` + MCP `token`(기본) |
 
 ---
 
@@ -263,19 +261,17 @@ UI는 token 모드에서 잠금 해제 화면 → `sessionStorage`에 토큰 보
 
 ---
 
-## MCP OAuth (리소스 서버)
+## MCP 인증
 
-직접 `/mcp`에 붙는 클라용. 모드: `none` | `token`(기본) | `oauth`.
+모드: `token`(기본, static Bearer) | `none`.
 
 ```bash
-export ONION_BRIDGE_AUTH_MODE=oauth
-export ONION_BRIDGE_OAUTH_ISSUER=…
-export ONION_BRIDGE_OAUTH_AUDIENCE=…
-export ONION_BRIDGE_OAUTH_JWKS_URI=…
+export ONION_BRIDGE_AUTH_MODE=token   # 기본
+# export ONION_BRIDGE_AUTH_MODE=none  # 비권장
 ```
 
-스코프: `workspace:read` / `write` / `exec`  
-메타데이터: `/.well-known/oauth-protected-resource`
+ChatGPT Secure MCP Tunnel은 프로필 Bearer를 tunnel yaml에 넣는 `token` 모드를 사용합니다.  
+(구 MCP OAuth/JWKS 모드는 제거됨 — 현재 사용 경로 없음.)
 
 ---
 
@@ -340,7 +336,7 @@ onion -h / -v
 ## 보안
 
 - 파일 MCP 작업은 승인 없이 디스크에 반영됩니다. workspace를 필요한 범위로만 두세요.
-- MCP·웹 모두 기본은 localhost; 원격은 Tailscale + token/oauth.
+- MCP·웹 모두 기본은 localhost; 원격은 Tailscale + control/MCP token.
 - 카카오·control token·API key를 저장소에 넣지 마세요.
 - 동일 workspace를 여러 에이전트가 쓰면 충돌 방지는 없습니다.
 

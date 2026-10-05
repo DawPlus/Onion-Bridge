@@ -2,7 +2,6 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { ALL_SCOPES } from "./auth/scopes.js";
 import { readGlobalSetup, readProfile, runSetup } from "./setup.js";
 
 export const DEFAULT_PROFILE = "default";
@@ -22,75 +21,13 @@ function resolveAuthMode(profile, global) {
 		global?.authMode ||
 		"token";
 	const mode = String(raw).toLowerCase();
-	if (mode === "none" || mode === "oauth" || mode === "token") return mode;
-	throw new Error(
-		`Unsupported auth mode "${raw}". Use none, token, or oauth.`,
-	);
-}
-
-function splitCsv(value) {
-	if (!value) return [];
-	if (Array.isArray(value)) return value.map(String).filter(Boolean);
-	return String(value)
-		.split(",")
-		.map((part) => part.trim())
-		.filter(Boolean);
-}
-
-function resolveOAuthConfig({ profile, global, port }) {
-	const oauth = {
-		...(global?.oauth || {}),
-		...(profile?.oauth || {}),
-	};
-	const issuer =
-		process.env.ONION_BRIDGE_OAUTH_ISSUER || oauth.issuer || undefined;
-	const audienceRaw =
-		process.env.ONION_BRIDGE_OAUTH_AUDIENCE || oauth.audience || undefined;
-	const jwksUri =
-		process.env.ONION_BRIDGE_OAUTH_JWKS_URI || oauth.jwksUri || undefined;
-	const authorizationServers = splitCsv(
-		process.env.ONION_BRIDGE_OAUTH_AUTHORIZATION_SERVERS ||
-			oauth.authorizationServers ||
-			issuer,
-	);
-	const resource =
-		process.env.ONION_BRIDGE_OAUTH_RESOURCE ||
-		oauth.resource ||
-		`http://127.0.0.1:${port}/mcp`;
-
-	if (!issuer) {
+	if (mode === "none" || mode === "token") return mode;
+	if (mode === "oauth") {
 		throw new Error(
-			"OAuth mode requires issuer (ONION_BRIDGE_OAUTH_ISSUER or profile/global oauth.issuer).",
+			'MCP auth mode "oauth" was removed. Use token (default) or none.',
 		);
 	}
-	if (!audienceRaw) {
-		throw new Error(
-			"OAuth mode requires audience (ONION_BRIDGE_OAUTH_AUDIENCE or profile/global oauth.audience).",
-		);
-	}
-	if (!jwksUri) {
-		throw new Error(
-			"OAuth mode requires JWKS URI (ONION_BRIDGE_OAUTH_JWKS_URI or profile/global oauth.jwksUri).",
-		);
-	}
-
-	const audience = Array.isArray(audienceRaw)
-		? audienceRaw.map(String)
-		: String(audienceRaw).includes(",")
-			? splitCsv(audienceRaw)
-			: String(audienceRaw);
-
-	return {
-		issuer: String(issuer),
-		audience,
-		jwksUri: String(jwksUri),
-		authorizationServers:
-			authorizationServers.length > 0
-				? authorizationServers
-				: [String(issuer)],
-		resource: String(resource),
-		scopesSupported: ALL_SCOPES,
-	};
+	throw new Error(`Unsupported auth mode "${raw}". Use none or token.`);
 }
 
 export async function loadConfig(profileName = DEFAULT_PROFILE, workspaceOverride) {
@@ -103,10 +40,6 @@ export async function loadConfig(profileName = DEFAULT_PROFILE, workspaceOverrid
 	const tunnelProfile = `onion-${profileName}`;
 	const healthPort = profile.healthPort || nextHealthPort(port);
 	const authMode = resolveAuthMode(profile, global);
-	const oauth =
-		authMode === "oauth"
-			? resolveOAuthConfig({ profile, global, port })
-			: undefined;
 
 	await writeTunnelProfile({
 		profile: tunnelProfile,
@@ -128,7 +61,6 @@ export async function loadConfig(profileName = DEFAULT_PROFILE, workspaceOverrid
 		auth: {
 			mode: authMode,
 			token,
-			oauth,
 		},
 	};
 }
@@ -149,7 +81,7 @@ export async function writeTunnelProfile({
 }) {
 	const file = tunnelProfilePath(profile.replace(/^onion-/, ""));
 	await fs.mkdir(path.dirname(file), { recursive: true });
-	const includeStaticBearer = authMode !== "oauth" && authMode !== "none";
+	const includeStaticBearer = authMode !== "none";
 	const extraHeaders = includeStaticBearer
 		? `
   extra_headers:
