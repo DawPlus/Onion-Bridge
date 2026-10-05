@@ -14,7 +14,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "start": "node ./bin/onionBridge.js",
+    "start": "node ./bin/onionBridge.js web",
+    "bridge": "node ./bin/onionBridge.js",
+    "web": "node ./bin/onionBridge.js web",
+    "test": "node --test test/**/*.test.js",
     "pack:local": "npm pack"
   },
   "dependencies": {

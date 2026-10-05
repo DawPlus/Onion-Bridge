@@ -61,6 +61,38 @@ export async function listProfiles() {
 	return [...profiles].sort();
 }
 
+export async function writeGlobalSetup({ tunnelBin, apiKey }) {
+	const current = (await readGlobalSetup()) || {};
+	const next = {
+		tunnelBin: tunnelBin ?? current.tunnelBin,
+		apiKey: apiKey ?? current.apiKey,
+	};
+	if (!next.tunnelBin || !next.apiKey) {
+		throw new Error("Shared tunnel setup is incomplete.");
+	}
+	await fs.mkdir(DIR, { recursive: true });
+	await fs.writeFile(GLOBAL_FILE, JSON.stringify(next, null, 2), {
+		encoding: "utf8",
+		mode: 0o600,
+	});
+	return next;
+}
+
+export async function writeProfile(name, profile) {
+	assertProfileName(name);
+	await fs.mkdir(PROFILES_DIR, { recursive: true });
+	await fs.writeFile(
+		path.join(PROFILES_DIR, `${name}.json`),
+		JSON.stringify(profile, null, 2),
+		{ encoding: "utf8", mode: 0o600 },
+	);
+	return profile;
+}
+
+export async function allocateProfilePort() {
+	return allocatePort();
+}
+
 export async function runSetup(name = "default") {
 	assertProfileName(name);
 

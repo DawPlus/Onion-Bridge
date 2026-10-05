@@ -25,7 +25,13 @@ export async function startBridge(profileName = "default", workspaceOverride) {
 	app.use(express.json({ limit: "5mb" }));
 
 	app.get("/health", (_req, res) =>
-		res.json({ status: "ok", profile: config.name, workspace: root }),
+		res.json({
+			status: "ok",
+			profile: config.name,
+			workspace: root,
+			pid: process.pid,
+			port: config.port,
+		}),
 	);
 	app.post("/mcp", async (req, res) => {
 		if (req.headers.authorization !== `Bearer ${config.token}`) {

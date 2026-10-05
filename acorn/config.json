@@ -1,0 +1,48 @@
+{
+	"projectName": "Onion-Bridge",
+	"communicationMode": "caveman-ultra",
+	"codingMode": "ponytail-full",
+	"coreSkills": ["brain", "caveman", "ponytail"],
+	"transport": {
+		"default": "economy"
+	},
+	"roles": {
+		"coordinator": { "guide": "acorn/agents/coordinator.md" },
+		"worker": { "guide": "acorn/agents/worker.md" },
+		"qa": { "guide": "acorn/agents/qa.md", "executor": "human" }
+	},
+	"workflow": {
+		"classification": ["quick", "minor", "feature", "major"],
+		"ticketRequired": ["feature", "major"],
+		"contextBudget": {
+			"relatedFiles": 2,
+			"priority": ["rules", "active-ticket", "current-phase"]
+		},
+		"riskSignals": [
+			"dependency",
+			"schema",
+			"migration",
+			"config",
+			"many-files",
+			"cross-role",
+			"shared-asset"
+		],
+		"maxAgentRetries": 2,
+		"phases": [
+			"request",
+			"define",
+			"dispatch",
+			"worker",
+			"verify",
+			"coordinator_review",
+			"qa",
+			"done"
+		]
+	},
+	"validationCommands": [],
+	"docsConsistencyCommand": "node acorn/scripts/check-docs-consistency.cjs",
+	"projectDocsPath": "docs",
+	"codeMapPath": "docs/CODE_MAP.md",
+	"ticketBoardPath": "docs/tickets/BOARD.md",
+	"ticketArchivePath": "docs/tickets/archive"
+}

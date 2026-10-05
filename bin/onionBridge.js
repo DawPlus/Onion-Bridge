@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { readFile } from "node:fs/promises";
+import { startControlServer } from "../src/control/server.js";
 import { startBridge } from "../src/server.js";
 import { listProfiles, runSetup } from "../src/setup.js";
 
@@ -25,6 +26,8 @@ if (first === "setup") {
 	action = runSetup(args[1] || "default");
 } else if (first === "profiles") {
 	action = printProfiles();
+} else if (first === "web") {
+	action = startControlServer();
 } else if (first === "start") {
 	action = args[1]
 		? startBridge(args[1])
@@ -66,6 +69,9 @@ function printHelp() {
 
   onion <profile>
     지정한 프로필을 실행합니다.
+
+  onion web
+    로컬 웹 제어 API(및 빌드된 UI)를 띄웁니다.
 
   onion setup
     기본(default) 프로필을 생성하거나 수정합니다.
